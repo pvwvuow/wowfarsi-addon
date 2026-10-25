@@ -2,9 +2,10 @@
 ## Title: WoWFA|cffffd100 - فارسی|r
 ## Notes: Persian talent descriptions | فارسی‌سازی متن تلنت‌ها
 ## Author: wowfarsi
-## Version: 0.2.0
+## Version: 0.2.1
+## SavedVariables: WoWFA_DB
 ## X-Website: https://pvwvuow.github.io/wow/
-## X-License: All Rights Reserved, credit required. See LICENSE at https://github.com/pvwvuow/wowfa
+## X-License: All Rights Reserved, credit required. See LICENSE at https://github.com/pvwvuow/wowfarsi-addon
 
 Shape.lua
 Core.lua

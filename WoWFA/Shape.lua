@@ -1,21 +1,21 @@
--- WoWFA Shape.lua - Arabic-script reshaper + bidi reordering for WoW font strings.
--- WoW does not shape Arabic script or run RTL, so we do it ourselves:
---   1. map each Persian/Arabic letter to its presentation form (isolated /
---      initial / medial / final) according to joining context, with ZWNJ
---      breaks and lam-alef ligatures,
---   2. reorder runs per line: RTL runs character-reversed, Latin/digit/number
---      runs (spell names, $tokens, digits, percentages) kept left-to-right,
---      ASCII brackets mirrored inside RTL runs.
--- Input is logical UTF-8 Persian text, output is a visual string that a plain
--- left-to-right FontString renders correctly. Call per wrapped line.
+-- WoWFA Shape.lua - Arabic-script reshaper (+ optional manual bidi) for WoW font strings.
+-- WoW draws characters exactly as given, so Persian letters must be turned into
+-- their presentation forms (isolated / initial / medial / final) by us:
+--   1. map each Persian/Arabic letter to the right form according to joining
+--      context, with ZWNJ breaks and lam-alef ligatures  (M.shape_only),
+--   2. optionally reorder runs per line (M.line): RTL runs character-reversed,
+--      Latin/digit/number runs kept left-to-right. Only needed when the game
+--      client does NOT run its own bidi pass (see Core.lua modes).
+-- Input is logical UTF-8 Persian text.
 
 local M = {}
 
 local RJ = 1 -- right-joining (connects to the previous letter only)
 local DJ = 2 -- dual-joining (connects both ways)
 -- letter codepoint -> { class, iso, fin, ini, med }  (ini/med only for DJ)
--- forms live in Arabic Presentation Forms-B / Arabic Supplement blocks and
--- must be mapped explicitly (they are NOT adjacent to the base letter)
+-- forms live in Arabic Presentation Forms-A/B and are NOT adjacent to the base
+-- letter. Every code below was checked against the Unicode decomposition data
+-- (<isolated>/<final>/<initial>/<medial> -> base letter).
 local F = {}
 local function d(letter, form) -- dual-joining: iso/fin/ini/med consecutive
         F[letter] = { DJ, form, form + 1, form + 2, form + 3 }
@@ -23,8 +23,11 @@ end
 local function r(letter, form) -- right-joining: iso/fin consecutive
         F[letter] = { RJ, form, form + 1 }
 end
+local function hj(letter, form) -- hamza: never joins, single form
+        F[letter] = { RJ, form, form }
+end
 
-r(0x0621, 0xFE80) -- hamza
+hj(0x0621, 0xFE80) -- hamza (does not join)
 r(0x0622, 0xFE81) -- alef madda
 r(0x0623, 0xFE83) -- alef hamza above
 r(0x0624, 0xFE85) -- waw hamza
@@ -38,25 +41,25 @@ d(0x062B, 0xFE99) -- the
 d(0x062C, 0xFE9D) -- jim
 d(0x062D, 0xFEA1) -- hah
 d(0x062E, 0xFEA5) -- khah
-r(0x062F, 0xFEAB) -- dal
-r(0x0630, 0xFEAD) -- thal
-r(0x0631, 0xFEAF) -- re
-r(0x0632, 0xFEB1) -- zeh
-d(0x0633, 0xFEB3) -- sin
-d(0x0634, 0xFEB7) -- shin
-d(0x0635, 0xFEBB) -- sad
-d(0x0636, 0xFEBF) -- dad
-d(0x0637, 0xFEC3) -- tah
-d(0x0638, 0xFEC7) -- zah
-d(0x0639, 0xFECB) -- ain
-d(0x063A, 0xFECF) -- ghain
-d(0x0641, 0xFED3) -- fe
-d(0x0642, 0xFED7) -- qaf
-d(0x0643, 0xFEDB) -- kaf (arabic)
-d(0x0644, 0xFEDF) -- lam
-d(0x0645, 0xFEE3) -- mim
-d(0x0646, 0xFEE7) -- noon
-d(0x0647, 0xFEEB) -- heh
+r(0x062F, 0xFEA9) -- dal
+r(0x0630, 0xFEAB) -- thal
+r(0x0631, 0xFEAD) -- re
+r(0x0632, 0xFEAF) -- zeh
+d(0x0633, 0xFEB1) -- sin
+d(0x0634, 0xFEB5) -- shin
+d(0x0635, 0xFEB9) -- sad
+d(0x0636, 0xFEBD) -- dad
+d(0x0637, 0xFEC1) -- tah
+d(0x0638, 0xFEC5) -- zah
+d(0x0639, 0xFEC9) -- ain
+d(0x063A, 0xFECD) -- ghain
+d(0x0641, 0xFED1) -- fe
+d(0x0642, 0xFED5) -- qaf
+d(0x0643, 0xFED9) -- kaf (arabic)
+d(0x0644, 0xFEDD) -- lam
+d(0x0645, 0xFEE1) -- mim
+d(0x0646, 0xFEE5) -- noon
+d(0x0647, 0xFEE9) -- heh
 r(0x0648, 0xFEED) -- vav
 r(0x0649, 0xFEEF) -- alef maksura
 d(0x064A, 0xFEF1) -- yeh (arabic)
@@ -66,9 +69,10 @@ r(0x0698, 0xFB8A) -- zhe
 d(0x06A9, 0xFB8E) -- kaf (persian)
 d(0x06AF, 0xFB92) -- gaf
 d(0x06CC, 0xFBFC) -- yeh (persian)
-r(0x06C0, 0xFBAA) -- heh with yeh above
+r(0x06C0, 0xFBA4) -- heh with yeh above
 d(0x06AD, 0xFBD3) -- ng
 
+local HAMZA = 0x0621
 local LAM = 0x0644
 local LAM_ALEF = { -- lam + alef variant -> ligature (iso, fin)
         [0x0622] = { 0xFEF5, 0xFEF6 },
@@ -87,14 +91,14 @@ local function is_arabic(cp)
         return (cp >= 0x0600 and cp <= 0x06FF) or (cp >= 0xFB50 and cp <= 0xFDFF) or (cp >= 0xFE70 and cp <= 0xFEFF)
 end
 
-local function is_ltr(cp) -- Latin letters, digits and number/token glue
-        if (cp >= 0x41 and cp <= 0x5A) or (cp >= 0x61 and cp <= 0x7A) or (cp >= 0x30 and cp <= 0x39) then
-                return true
-        end
-        local glue = { [0x24] = true, [0x25] = true, [0x2B] = true, [0x2D] = true, [0x2E] = true, [0x2F] = true,
-                [0x5F] = true, [0x3A] = true, [0x27] = true, [0x26] = true }
-        return glue[cp] or false
+local function is_alnum(cp) -- Latin letters and digits (ASCII + Persian/Arabic-Indic digits)
+        return cp ~= nil
+                and ((cp >= 0x41 and cp <= 0x5A) or (cp >= 0x61 and cp <= 0x7A) or (cp >= 0x30 and cp <= 0x39)
+                or (cp >= 0x6F0 and cp <= 0x6F9) or (cp >= 0x660 and cp <= 0x669))
 end
+
+-- glue characters that belong to a number / token ONLY when they sit inside it
+local GLUE_MID = { [0x2E] = true, [0x2F] = true, [0x2D] = true, [0x5F] = true, [0x3A] = true, [0x27] = true, [0x26] = true }
 
 local function decode(s)
         local cps = {}
@@ -172,7 +176,7 @@ function M.reshape(cps)
                                 else
                                         local form
                                         if f[1] == DJ then
-                                                local next_joins = next_cp ~= nil and F[next_cp] ~= nil
+                                                local next_joins = next_cp ~= nil and next_cp ~= HAMZA and F[next_cp] ~= nil
                                                 if prev_ok and next_joins then
                                                         form = f[5] -- medial
                                                 elseif prev_ok then
@@ -194,8 +198,40 @@ function M.reshape(cps)
         return out
 end
 
+local function to_string(cps)
+        local out = {}
+        for i = 1, #cps do
+                out[i] = encode(cps[i])
+        end
+        return table.concat(out)
+end
+
+-- logical text -> logical text with presentation forms (no reordering)
+function M.shape_only(text)
+        return to_string(M.reshape(decode(text)))
+end
+
 -- ------------------------------------------------------------------- bidi
 local MIRROR = { ["("] = ")", [")"] = "(", ["["] = "]", ["]"] = "[", ["{"] = "}", ["}"] = "{", ["<"] = ">", [">"] = "<" }
+
+local function classify(cps, idx)
+        local cp = cps[idx]
+        if is_alnum(cp) then
+                return "L"
+        end
+        if is_arabic(cp) then
+                return "R"
+        end
+        local p, nx = cps[idx - 1], cps[idx + 1]
+        if cp == 0x24 then -- $token prefix
+                return is_alnum(nx) and "L" or "N"
+        elseif cp == 0x25 or cp == 0x2B then -- 16%  Mythic+
+                return is_alnum(p) and "L" or "N"
+        elseif GLUE_MID[cp] then -- 3.5  12:30  Zul'Aman  5-10
+                return (is_alnum(p) and is_alnum(nx)) and "L" or "N"
+        end
+        return "N"
+end
 
 function M.bidi(cps)
         local runs = {}
@@ -205,8 +241,8 @@ function M.bidi(cps)
                         runs[#runs + 1] = { kind = kind, cps = cur }
                 end
         end
-        for _, cp in ipairs(cps) do
-                local k = is_arabic(cp) and "R" or (is_ltr(cp) and "L" or "N")
+        for idx, cp in ipairs(cps) do
+                local k = classify(cps, idx)
                 if k ~= kind then
                         flush()
                         cur, kind = {}, k
@@ -242,7 +278,7 @@ function M.bidi(cps)
         return table.concat(out)
 end
 
--- shape one line (call after wrapping and after numbers are filled)
+-- shape + reorder one line (call after wrapping and after numbers are filled)
 function M.line(text)
         return M.bidi(M.reshape(decode(text)))
 end
