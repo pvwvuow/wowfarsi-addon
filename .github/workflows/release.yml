@@ -1,0 +1,38 @@
+name: Release
+
+# Triggered by pushing a tag v* (e.g. v0.4.3, v0.4.3-beta.1).
+# - Builds WoWFarsi-<ver>.zip (WoWFA + WoWFarsi_Quests + all WoWFQ_* folders)
+# - Creates the GitHub Release and attaches the zip
+# - Uploads the same zip to CurseForge with the release description as changelog
+# Tags containing "-" (pre-releases) become CurseForge "beta", the rest "release".
+# CurseForge project id: repository variable CF_PROJECT_ID, or the
+# "## X-Curse-Project-ID:" header inside the .toc files.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Package zip
+        run: bash scripts/release.sh package
+
+      - name: GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/release.sh github
+
+      - name: CurseForge upload
+        env:
+          CF_API_KEY: ${{ secrets.CF_API_KEY }}
+          CF_PROJECT_ID: ${{ vars.CF_PROJECT_ID }}
+        run: bash scripts/release.sh curseforge
