@@ -2,7 +2,7 @@
 ## Title: WoWFA|cffffd100 - فارسی|r
 ## Notes: Persian talent descriptions | فارسی‌سازی متن تلنت‌ها
 ## Author: wowfarsi
-## Version: 0.4.1
+## Version: 0.4.2
 ## SavedVariables: WoWFA_DB
 ## IconTexture: Interface\AddOns\WoWFA\Media\icon
 ## AddonCompartmentFunc: WoWFA_CompartmentOnClick

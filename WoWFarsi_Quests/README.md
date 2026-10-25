@@ -4,12 +4,14 @@ Tiny add-on that saves the English text of quests as you open them, so the
 project has real source text to translate. Nothing is uploaded.
 
 The display half shows the Persian quest text inside the game (requires the
-`WoWFA` addon). `/wowfq mode below|replace` picks whether the Persian text is
-appended under the English text (below, default) or replaces it. How the
-Persian letters are drawn follows the WoWFA panel display mode
-(`/wowfa mode 1|2|3`), and the whole feature can be switched off in the WoWFA
-panel: the «کوئست‌ها» row toggles it, and with it off no text is added
-anywhere.
+`WoWFA` addon). A small gold button above the quest text (or
+`/wowfq view fa|en|both`) picks what is shown: only the Persian text (fa,
+default), only the original English (en), or the Persian text under the
+English (both - the old "below" look). `/wowfq mode below|replace` still
+works: below maps to both, replace to fa. How the Persian letters are drawn
+follows the WoWFA panel display mode (`/wowfa mode 1|2|3`), and the whole
+feature can be switched off in the WoWFA panel: the «کوئست‌ها» row toggles
+it, and with it off no text is added anywhere and the button stays hidden.
 
 Part of the WoWFarsi add-on family.
 

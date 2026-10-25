@@ -10,7 +10,7 @@ WoWFA = WoWFA or {}
 
 local M = WoWFA
 
-M.version = "0.4.0"
+M.version = "0.4.2"
 M.FONT = "Interface\\AddOns\\WoWFA\\Fonts\\Vazirmatn.ttf"
 M.MEDIA = "Interface\\AddOns\\WoWFA\\Media\\"
 
@@ -107,8 +107,10 @@ function M:ModuleList()
 end
 
 -- Persian text for our own UI, same semantics as the tooltip pipeline per
--- /wowfa mode (1: reshape + RLM, client orders; 2: raw logical; 3: full manual)
-local RLM = "\226\128\143" -- U+200F RIGHT-TO-LEFT MARK
+-- /wowfa mode (1: reshape, client orders; 2: raw logical; 3: full manual).
+-- U+200F (RLM) is stripped from the OUTPUT in every mode: the bundled
+-- Vazirmatn has no glyph for it, so it would render as a broken box.
+local RLM = "\226\128\143" -- U+200F RIGHT-TO-LEFT MARK (stripped, see above)
 
 function M:GetMode()
         local m = WoWFA_DB and WoWFA_DB.mode
@@ -130,21 +132,27 @@ function M:SetMode(mode)
         return false
 end
 
-function M:ShapeText(text)
+function M:ShapeText(text, mode)
         if not text or text == "" then
+                return text
+        end
+        text = text:gsub(RLM, "") -- Vazirmatn has no glyph for RLM (tofu)
+        if text == "" then
                 return text
         end
         local Shape = WoWFA_Shape
         if not Shape then
                 return text
         end
-        local mode = M:GetMode()
+        if mode ~= 1 and mode ~= 2 and mode ~= 3 then
+                mode = M:GetMode()
+        end
         if mode == 3 then
                 return Shape.line(text)
         elseif mode == 1 then
-                return RLM .. Shape.shape_only(text)
+                return Shape.shape_only(text)
         end
-        return RLM .. text
+        return text
 end
 
 -- this addon's own feature - registered here so the panel always has it

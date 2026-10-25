@@ -10,6 +10,8 @@
 --   2           fully raw: logical Persian text, the client shapes and orders.
 --   3           manual: we reshape AND reorder every line ourselves (only for a
 --               client without any bidi support).
+-- No mode ever emits U+200F (RLM): the bundled Vazirmatn font has no glyph for
+-- it, so it would render as a broken box. RLM is stripped from the output.
 
 local ADDON_NAME = ...
 local Shape = WoWFA_Shape
@@ -17,7 +19,7 @@ local Shape = WoWFA_Shape
 local Font = "Interface\\AddOns\\WoWFA\\Fonts\\Vazirmatn.ttf"
 local FONT_SIZE = 12
 local FA_COLOR_R, FA_COLOR_G, FA_COLOR_B = 0.85, 0.87, 0.92
-local RLM = "\226\128\143" -- U+200F RIGHT-TO-LEFT MARK: makes the base direction RTL
+local RLM = "\226\128\143" -- U+200F: stripped from output (Vazirmatn has no glyph for it)
 
 WoWFA_Data = WoWFA_Data or {}
 WoWFA_En = WoWFA_En or {}
@@ -312,6 +314,7 @@ local function add_persian(tooltip, spellId)
         local ok, result = pcall(function()
                 fa = resolve_conditionals(fa)
                 fa = fill_numbers(spellId, fa)
+                fa = fa:gsub(RLM, "") -- Vazirmatn has no glyph for RLM (tofu)
                 local mode = get_mode()
                 if mode == 3 then
                         local width = tooltip:GetWidth() - 40
@@ -328,7 +331,7 @@ local function add_persian(tooltip, spellId)
                         for para in string.gmatch(fa, "([^\n]*)\n?") do
                                 if para ~= "" then
                                         local txt = (mode == 1) and Shape.shape_only(para) or para
-                                        tooltip:AddLine(RLM .. txt, FA_COLOR_R, FA_COLOR_G, FA_COLOR_B, true)
+                                        tooltip:AddLine(txt, FA_COLOR_R, FA_COLOR_G, FA_COLOR_B, true)
                                         style_last_line(tooltip)
                                 end
                         end
@@ -364,7 +367,66 @@ TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Spell, function(too
         end
 end)
 
+-- /wowfa test - one fixed Persian+Latin sentence rendered in all three display
+-- modes, stacked; one screenshot then shows which mode the client needs.
+local TEST_SENTENCE = "شانس ضربهٔ بحرانی Wrath و Starfire ۱۰٪ افزایش می‌یابد..."
+local TEST_LABELS = { "حالت ۱", "حالت ۲", "حالت ۳" }
+local function show_test_frame()
+        if not (WoWFA and WoWFA.ShapeText) then
+                return
+        end
+        local f = WoWFATestFrame
+        if not f then
+                f = CreateFrame("Frame", "WoWFATestFrame", UIParent)
+                f:SetSize(470, 212)
+                f:SetPoint("CENTER")
+                f:SetFrameStrata("DIALOG")
+                f:EnableMouse(true)
+                f:SetMovable(true)
+                f:RegisterForDrag("LeftButton")
+                f:SetScript("OnDragStart", f.StartMoving)
+                f:SetScript("OnDragStop", f.StopMovingOrSizing)
+                f:SetClampedToScreen(true)
+                f:SetBackdrop({ bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+                                insets = { left = 2, right = 2, top = 2, bottom = 2 } })
+                f:SetBackdropColor(0.016, 0.024, 0.043, 0.88)
+                f:SetBackdropBorderColor(0.941, 0.780, 0.369, 0.30)
+                local close = CreateFrame("Button", nil, f, "UIPanelCloseButton")
+                close:SetPoint("TOPRIGHT", f, "TOPRIGHT", 0, 0)
+                local head = f:CreateFontString(nil, "OVERLAY")
+                head:SetPoint("TOPLEFT", f, "TOPLEFT", 12, -10)
+                head:SetFont(Font, 11, "")
+                head:SetTextColor(0.659, 0.635, 0.580) -- muted
+                head:SetText("/wowfa test  -  drag to move, ESC closes")
+                f.rows = {}
+                for i = 1, 3 do
+                        local label = f:CreateFontString(nil, "OVERLAY")
+                        label:SetPoint("TOPLEFT", f, "TOPLEFT", 12, -30 - (i - 1) * 58)
+                        label:SetFont(Font, 11, "")
+                        label:SetJustifyH("LEFT")
+                        local gold = WoWFA.C and WoWFA.C.gold
+                        if gold then
+                                label:SetTextColor(gold.r, gold.g, gold.b)
+                        end
+                        local line = f:CreateFontString(nil, "OVERLAY")
+                        line:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 0, -4)
+                        line:SetFont(Font, 13, "")
+                        line:SetJustifyH("LEFT")
+                        line:SetWidth(446)
+                        line:SetTextColor(0.910, 0.890, 0.839) -- text
+                        f.rows[i] = { label = label, line = line }
+                end
+                tinsert(UISpecialFrames, "WoWFATestFrame")
+        end
+        for i = 1, 3 do
+                f.rows[i].label:SetText(WoWFA:ShapeText(TEST_LABELS[i], i))
+                f.rows[i].line:SetText(WoWFA:ShapeText(TEST_SENTENCE, i))
+        end
+        f:Show()
+end
+
 -- /wowfa mode 1|2|3   - pick how the Persian line is drawn (saved between sessions)
+-- /wowfa test         - render the test sentence in all three modes at once
 SLASH_WOWFA1 = "/wowfa"
 SlashCmdList["WOWFA"] = function(msg)
         local cmd, arg = string.match(msg or "", "^%s*(%a*)%s*(%d*)")
@@ -372,8 +434,10 @@ SlashCmdList["WOWFA"] = function(msg)
                 WoWFA_DB = WoWFA_DB or {}
                 WoWFA_DB.mode = tonumber(arg)
                 print("WoWFA: display mode " .. arg .. " - hover a talent again")
+        elseif cmd == "test" then
+                show_test_frame()
         else
-                print("WoWFA: mode = " .. get_mode() .. "  (use /wowfa mode 1, 2 or 3)")
+                print("WoWFA: mode = " .. get_mode() .. "  (/wowfa mode 1|2|3, /wowfa test)")
         end
 end
 
