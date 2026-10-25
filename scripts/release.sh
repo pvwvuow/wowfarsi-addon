@@ -64,10 +64,15 @@ stage_package() {
 stage_github() {
   echo "== github: release for $TAG =="
   if ! gh release view "$TAG" -R "$REPO" >/dev/null 2>&1; then
+    local notes_args=(--generate-notes)
+    if [ -f .github/release-body.md ]; then
+      echo "-- using .github/release-body.md as the release body"
+      notes_args=(--notes-file .github/release-body.md)
+    fi
     # shellcheck disable=SC2086
     gh release create "$TAG" "$ZIP" -R "$REPO" \
       --title "WoWFarsi $VER" \
-      --generate-notes $GH_PRERELEASE
+      "${notes_args[@]}" $GH_PRERELEASE
   else
     echo "release $TAG already exists; skipping creation"
   fi
