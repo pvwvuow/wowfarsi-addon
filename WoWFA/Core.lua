@@ -343,6 +343,11 @@ local function add_persian(tooltip, spellId)
 end
 
 TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Spell, function(tooltip)
+        -- module gate first (cheap table lookups): with "talents" disabled we
+        -- add no text and pay nothing beyond this check
+        if WoWFA and WoWFA.IsEnabled and not WoWFA:IsEnabled("talents") then
+                return
+        end
         if tooltip:IsForbidden() then
                 return
         end
