@@ -1,5 +1,5 @@
 ## Interface: 120105
-## X-Curse-Project-ID: 0
+## X-Curse-Project-ID: 1764059
 ## Title: WoWFA|cffffd100 - فارسی|r
 ## Notes: Persian talent descriptions | فارسی‌سازی متن تلنت‌ها
 ## Author: wowfarsi

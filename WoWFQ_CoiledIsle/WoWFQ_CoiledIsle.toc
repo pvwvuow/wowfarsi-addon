@@ -1,5 +1,5 @@
 ## Interface: 120105
-## X-Curse-Project-ID: 0
+## X-Curse-Project-ID: 1764059
 ## Title: WoWFA Quests: Coiled Isle
 ## Notes: Persian quest text for Coiled Isle (generated data, LoadOnDemand).
 ## Author: wowfarsi

@@ -1,5 +1,5 @@
 ## Interface: 120105
-## X-Curse-Project-ID: 0
+## X-Curse-Project-ID: 1764059
 ## Title: WoWFarsi Quests|cffffd100 (collector + display)|r
 ## Notes: Collector saves the English quest text for the project; Display shows the Persian quest text - only Persian, only English, or Persian under the English (toggle button + /wowfq view fa|en|both, switch in the WoWFA panel; LoadOnDemand zones).
 ## Author: wowfarsi
