@@ -1,0 +1,11 @@
+## Interface: 120105
+## Title: WoWFA Quests: Harandar
+## Notes: Persian quest text for Harandar (generated data, LoadOnDemand).
+## Author: wowfarsi
+## Version: 0.1.0
+## LoadOnDemand: 1
+## Dependencies: WoWFarsi_Quests
+## X-Website: https://pvwvuow.github.io/wow/
+## X-License: All Rights Reserved, credit required. See LICENSE at https://github.com/pvwvuow/wowfa
+
+Data.lua

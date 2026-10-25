@@ -1,0 +1,13 @@
+## Interface: 120105
+## Title: WoWFarsi Quests|cffffd100 (collector + display)|r
+## Notes: Collector saves the English quest text for the project; Display shows the Persian quest text (mode below/replace via /wowfq, toggle in the WoWFA panel; WoWFA_Quests data, LoadOnDemand zones).
+## Author: wowfarsi
+## Version: 0.2.1
+## X-Website: https://pvwvuow.github.io/wow/
+## X-License: All Rights Reserved, credit required. See LICENSE at https://github.com/pvwvuow/wowfarsi-addon
+## Dependencies: WoWFA
+## SavedVariables: WoWFAQuestDB, WoWFQ_DB
+
+Collector.lua
+Index.lua
+Display.lua
