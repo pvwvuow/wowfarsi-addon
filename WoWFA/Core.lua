@@ -1,7 +1,15 @@
 -- WoWFA Core.lua - shows the Persian talent text under the English tooltip.
 -- Pipeline per docs/ADDON.md: lookup -> resolve $?conditionals (player state)
 -- -> fill raw $tokens from the live English description (option B fallback)
--- -> wrap to the tooltip width -> reshape + bidi each line -> add lines.
+-- -> hand the text to the tooltip (see display modes below).
+--
+-- Display modes (/wowfa mode 1|2|3):
+--   1 (default) the game client runs its own bidi pass on right-to-left text,
+--               so we only reshape letters into presentation forms and let the
+--               client order and wrap the line.
+--   2           fully raw: logical Persian text, the client shapes and orders.
+--   3           manual: we reshape AND reorder every line ourselves (only for a
+--               client without any bidi support).
 
 local ADDON_NAME = ...
 local Shape = WoWFA_Shape
@@ -9,9 +17,18 @@ local Shape = WoWFA_Shape
 local Font = "Interface\\AddOns\\WoWFA\\Fonts\\Vazirmatn.ttf"
 local FONT_SIZE = 12
 local FA_COLOR_R, FA_COLOR_G, FA_COLOR_B = 0.85, 0.87, 0.92
+local RLM = "\226\128\143" -- U+200F RIGHT-TO-LEFT MARK: makes the base direction RTL
 
 WoWFA_Data = WoWFA_Data or {}
 WoWFA_En = WoWFA_En or {}
+
+local function get_mode()
+        local m = WoWFA_DB and WoWFA_DB.mode
+        if m == 1 or m == 2 or m == 3 then
+                return m
+        end
+        return 1
+end
 
 -- ------------------------------------------------------------- conditionals
 -- $?c1[A][B]   -> spec index within the class (1-based, like the talent frame)
@@ -219,6 +236,7 @@ local function fill_numbers(spellId, fa)
 end
 
 -- -------------------------------------------------------------------- wrap
+-- only used by mode 3 (manual): in modes 1 and 2 the client wraps the line
 local measureFrame = CreateFrame("Frame", "WoWFAMeasure", UIParent)
 measureFrame:SetSize(10, 10)
 measureFrame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", -200, -200)
@@ -228,6 +246,17 @@ measure:SetFont(Font, FONT_SIZE, "")
 measure:SetAlpha(0)
 measure:SetWordWrap(false)
 measure:SetJustifyH("LEFT")
+
+local function text_width(s)
+        measure:SetText(s)
+        local w = measure:GetStringWidth()
+        if not w or w <= 0 then
+                -- measuring failed: estimate from the character count
+                local _, chars = string.gsub(s, "[^\128-\191]", "")
+                w = chars * FONT_SIZE * 0.55
+        end
+        return w
+end
 
 local function wrap(text, maxWidth)
         if maxWidth < 120 then
@@ -245,8 +274,7 @@ local function wrap(text, maxWidth)
                         local cur
                         for _, w in ipairs(words) do
                                 local cand = cur and (cur .. " " .. w) or w
-                                measure:SetText(cand)
-                                if measure:GetWidth() <= maxWidth or cur == nil then
+                                if cur == nil or text_width(cand) <= maxWidth then
                                         cur = cand
                                 else
                                         lines[#lines + 1] = cur
@@ -265,6 +293,17 @@ local function wrap(text, maxWidth)
 end
 
 -- ------------------------------------------------------------------- hook
+local function style_last_line(tooltip)
+        local name = tooltip:GetName()
+        local fs = name and _G[name .. "TextLeft" .. tooltip:NumLines()]
+        if fs and fs:GetFont() then
+                fs:SetFont(Font, FONT_SIZE, "")
+                if fs.SetJustifyH then
+                        fs:SetJustifyH("RIGHT")
+                end
+        end
+end
+
 local function add_persian(tooltip, spellId)
         local fa = WoWFA_Data[spellId]
         if not fa then
@@ -273,14 +312,25 @@ local function add_persian(tooltip, spellId)
         local ok, result = pcall(function()
                 fa = resolve_conditionals(fa)
                 fa = fill_numbers(spellId, fa)
-                local width = tooltip:GetWidth() - 40
-                local lines = wrap(fa, width)
-                for _, ln in ipairs(lines) do
-                        tooltip:AddLine(ln == "" and " " or Shape.line(ln), FA_COLOR_R, FA_COLOR_G, FA_COLOR_B, true)
-                        local name = tooltip:GetName()
-                        local fs = name and _G[name .. "TextLeft" .. tooltip:NumLines()]
-                        if fs and fs:GetFont() then
-                                fs:SetFont(Font, FONT_SIZE, "")
+                local mode = get_mode()
+                if mode == 3 then
+                        local width = tooltip:GetWidth() - 40
+                        if width < 200 then
+                                width = 260
+                        end
+                        local lines = wrap(fa, width)
+                        for _, ln in ipairs(lines) do
+                                tooltip:AddLine(ln == "" and " " or Shape.line(ln), FA_COLOR_R, FA_COLOR_G, FA_COLOR_B, true)
+                                style_last_line(tooltip)
+                        end
+                else
+                        -- one tooltip line per paragraph; the client wraps and orders it
+                        for para in string.gmatch(fa, "([^\n]*)\n?") do
+                                if para ~= "" then
+                                        local txt = (mode == 1) and Shape.shape_only(para) or para
+                                        tooltip:AddLine(RLM .. txt, FA_COLOR_R, FA_COLOR_G, FA_COLOR_B, true)
+                                        style_last_line(tooltip)
+                                end
                         end
                 end
                 tooltip:Show()
@@ -308,6 +358,19 @@ TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Spell, function(too
                 add_persian(tooltip, spellId)
         end
 end)
+
+-- /wowfa mode 1|2|3   - pick how the Persian line is drawn (saved between sessions)
+SLASH_WOWFA1 = "/wowfa"
+SlashCmdList["WOWFA"] = function(msg)
+        local cmd, arg = string.match(msg or "", "^%s*(%a*)%s*(%d*)")
+        if cmd == "mode" and (arg == "1" or arg == "2" or arg == "3") then
+                WoWFA_DB = WoWFA_DB or {}
+                WoWFA_DB.mode = tonumber(arg)
+                print("WoWFA: display mode " .. arg .. " - hover a talent again")
+        else
+                print("WoWFA: mode = " .. get_mode() .. "  (use /wowfa mode 1, 2 or 3)")
+        end
+end
 
 print("WoWFA loaded: " .. (function()
         local n = 0
