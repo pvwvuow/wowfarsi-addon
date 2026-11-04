@@ -2,7 +2,7 @@
 
 نمایش توضیح فارسی تلنت‌ها زیر tooltip اسپل‌ها (پنجرهٔ تلنت، اسپل‌بک، اکشن‌بار) برای همهٔ ۱۳ کلاس در **World of Warcraft Retail (Midnight 12.1.5)**.
 
-سایت رسمی: https://pvwvuow.github.io/wow/
+سایت رسمی: https://wowfarsi.ir
 
 > نسخهٔ آزمایشی — هنوز داخل بازی تست نشده است. اگر مشکلی دیدی، لطفاً در [Issues](../../issues) گزارش بده.
 
@@ -25,5 +25,20 @@
 ## مجوز
 
 All Rights Reserved با ذکر نام پروژه — جزئیات در [LICENSE](LICENSE). فونت Vazirmatn تحت مجوز SIL OFL 1.1 است.
+
+## WoWFA Forever
+
+نسخهٔ کلاینت **Forever (1.15.x)** هم در همین مخزن نگه‌داری می‌شود (سورس؛ دادهٔ تولیدشده فقط داخل زیپ Release است):
+
+1. از بخش [Releases](../../releases) فایل `WoWFA-forever-<ver>.zip` را بگیر.
+2. زیپ را باز کن تا پوشهٔ `WoWFA` در مسیر `Interface\AddOns\WoWFA` کلاینت Forever قرار بگیرد (نباید `WoWFA-main` باشد).
+3. وارد بازی شو و `/wowfa` را بزن.
+
+انتشار داده‌های Forever طبق قانون ساخت Add-On — بدون تبلیغ و بدون درخواست حمایت مالی — انجام می‌شود.
+
+## اعتبارها
+
+- داده‌ها از ForeverDB.net (https://foreverdb.net)
+- فونت Vazirmatn (SIL OFL 1.1)
 
 World of Warcraft is a trademark of Blizzard Entertainment, Inc. This is a fan-made Persian translation, not affiliated with or endorsed by Blizzard.

@@ -1,0 +1,31 @@
+## Interface: 16001
+## Title: WoWFA |cfff0c75e(Persian)|r
+## Notes: Persian translation for WoW Forever: items, quests, dungeons, NPCs, spellbook and talents. wowfarsi.ir
+## Author: WoWFarsi
+## Version: 0.5.1
+## AllowLoadGameType: forever
+## SavedVariables: WoWFA_FDB
+## IconTexture: Interface\AddOns\WoWFA\Media\icon
+## AddonCompartmentFunc: WoWFA_F_Compartment
+## AddonCompartmentFuncOnEnter: WoWFA_F_CompartmentEnter
+## AddonCompartmentFuncOnLeave: WoWFA_F_CompartmentLeave
+## X-Website: https://wowfarsi.ir
+## X-Credits: Data from ForeverDB.net
+
+Shape.lua
+Forever\Locale.lua
+Forever\Core.lua
+Forever\Text.lua
+Forever\UI.lua
+Forever\Data\Meta.lua
+Forever\Data\Names.lua
+Forever\Data\Spells.lua
+Forever\Data\Quests.lua
+Forever\Data\Items.lua
+Forever\Modules\Items.lua
+Forever\Modules\Quests.lua
+Forever\Modules\Dungeons.lua
+Forever\Modules\Npc.lua
+Forever\Modules\Spells.lua
+Forever\Panel.lua
+Forever\Minimap.lua
