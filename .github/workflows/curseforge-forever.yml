@@ -2,7 +2,7 @@
 #
 # When a WoWFA Forever release (tag forever-v...) is published, upload its zip to CurseForge.
 # Needs: secret CF_API_KEY; variable CF_FOREVER_PROJECT_ID (or the older CF_PROJECT_ID).
-# Optional: variable CF_GAME_TYPE (CurseForge flavour slug, default wow_classic),
+# Optional: variable CF_GAME_TYPE (CurseForge flavour slug, default wow-forever),
 #           variable CF_GAME_VERSION (force one exact version name).
 # Every step prints what it found, so a red run says exactly what is missing.
 
@@ -72,7 +72,7 @@ jobs:
               if not ok:
                   sys.stderr.write("::error::CF_GAME_VERSION %r is not a CurseForge version\n" % want)
           else:
-              slug = os.environ.get("CF_GAME_TYPE", "").strip() or "wow_classic"
+              slug = os.environ.get("CF_GAME_TYPE", "").strip() or "wow-forever"
               tids = [t["id"] for t in ts if t.get("slug") == slug]
               if not tids:
                   sys.stderr.write("::error::flavour %r not found; set CF_GAME_TYPE to one of: %s\n"
@@ -86,7 +86,10 @@ jobs:
           [ -n "$GV" ] || { echo "::error::no CurseForge game version found"; exit 1; }
           case "$TAG" in *-*) REL=beta ;; *) REL=release ;; esac
           ZIP=$(ls WoWFA-*.zip | head -n1)
-          META=$(GV="$GV" REL="$REL" python3 -c 'import json,os; print(json.dumps({"changelog": open("notes.md").read(), "changelogType": "markdown", "displayName": os.environ["TAG"], "gameVersions": [int(os.environ["GV"])], "releaseType": os.environ["REL"]}))')
+          NAME="wowfarsi-forever-${TAG#forever-v}.zip"
+          cp "$ZIP" "$NAME"
+          ZIP="$NAME"
+          META=$(GV="$GV" REL="$REL" python3 -c 'import json,os; print(json.dumps({"changelog": open("notes.md").read(), "changelogType": "markdown", "displayName": "wowfarsi-forever-" + os.environ["TAG"].replace("forever-v", "", 1), "gameVersions": [int(os.environ["GV"])], "releaseType": os.environ["REL"]}))')
           code=$(curl -sS -o resp.json -w '%{http_code}' -X POST -H "X-Api-Token: $CF_API_KEY" \
             -F "metadata=$META" -F "file=@$ZIP" \
             "https://wow.curseforge.com/api/projects/$CF_PROJECT_ID/upload-file")
