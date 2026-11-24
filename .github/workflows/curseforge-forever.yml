@@ -4,6 +4,7 @@
 # Needs: secret CF_API_KEY; variable CF_FOREVER_PROJECT_ID (or the older CF_PROJECT_ID).
 # Optional: variable CF_GAME_TYPE (CurseForge flavour slug, default wow-forever),
 #           variable CF_GAME_VERSION (force one exact version name).
+#           variable CF_RELEASE_TYPE (release, beta or alpha; default release - the name still says beta).
 # Every step prints what it found, so a red run says exactly what is missing.
 
 name: CurseForge (WoWFA Forever)
@@ -52,6 +53,7 @@ jobs:
           CF_PROJECT_ID: ${{ vars.CF_FOREVER_PROJECT_ID || vars.CF_PROJECT_ID }}
           CF_GAME_VERSION: ${{ vars.CF_GAME_VERSION }}
           CF_GAME_TYPE: ${{ vars.CF_GAME_TYPE }}
+          CF_RELEASE_TYPE: ${{ vars.CF_RELEASE_TYPE }}
           TAG: ${{ github.event.release.tag_name || inputs.tag }}
         run: |
           set -uo pipefail
@@ -84,7 +86,7 @@ jobs:
           PY
           )
           [ -n "$GV" ] || { echo "::error::no CurseForge game version found"; exit 1; }
-          case "$TAG" in *-*) REL=beta ;; *) REL=release ;; esac
+          REL="${CF_RELEASE_TYPE:-release}"  # the owner: users must get it by default, so CurseForge type release
           ZIP=$(ls WoWFA-*.zip | head -n1)
           NAME="wowfarsi-forever-${TAG#forever-v}.zip"
           cp "$ZIP" "$NAME"
